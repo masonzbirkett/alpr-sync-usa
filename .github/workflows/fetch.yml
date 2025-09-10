@@ -15,18 +15,10 @@ jobs:
           node-version: 20
       - run: npm install
       - run: npm run fetch
-      - name: Publish to gh-pages
-        run: |
-          set -e
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          rm -rf out && mkdir -p out
-          cp -r public/* out/ || true
-          touch out/.nojekyll
-          git fetch
-          git checkout -B gh-pages
-          rm -rf ./*
-          cp -r ../out/* . || true
-          git add -A
-          git commit -m "Update $(date -u +'%Y-%m-%dT%H:%M:%SZ')" || echo "No changes"
-          git push -f origin gh-pages
+          - name: Publish to gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public
+        publish_branch: gh-pages
+        force_orphan: true
