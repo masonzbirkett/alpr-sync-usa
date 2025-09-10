@@ -35,7 +35,7 @@ async function postOverpass(query) {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body
       });
-      if (!res.ok) throw new Error(\`HTTP \${res.status} @ \${url}\`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} @ ${url}`);
       return await res.json();
     } catch (e) {
       lastErr = e;
