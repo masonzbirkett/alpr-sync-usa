@@ -1,0 +1,13 @@
+{
+  "name": "alpr-sync-usa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch": "node fetch-alprs.js",
+    "start": "node fetch-alprs.js && npx http-server public -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
