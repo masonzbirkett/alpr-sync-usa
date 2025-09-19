@@ -50,12 +50,12 @@ jobs:
             data/cameras.geojson
           ls -lh data/cameras.mbtiles
 
-      # Convert MBTiles -> PMTiles using the CLI
+      # Convert MBTiles -> PMTiles using the Python module (doesn't rely on CLI on PATH)
       - name: Convert to PMTiles
         run: |
-          pmtiles convert data/cameras.mbtiles cameras.pmtiles \
-            || "$HOME/.local/bin/pmtiles" convert data/cameras.mbtiles cameras.pmtiles
+          python3 -m pmtiles.cli convert data/cameras.mbtiles cameras.pmtiles
           ls -lh cameras.pmtiles
+
 
       # Publish the file to the gh-pages branch at /tiles/cameras.pmtiles
       - name: Checkout gh-pages
