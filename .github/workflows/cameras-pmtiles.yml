@@ -3,7 +3,7 @@ name: Build & Publish Cameras PMTiles
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "17 6 * * *"   # daily at 06:17 UTC (change if you want)
+    - cron: "17 6 * * *"  # daily at 06:17 UTC
 
 permissions:
   contents: write
@@ -11,7 +11,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -29,14 +28,16 @@ jobs:
           node scripts/transform_cameras.mjs
           ls -lh data/cameras.geojson
 
-      # Install tools. IMPORTANT: add ~/.local/bin to PATH so 'pmtiles' works.
+      # Install tools. IMPORTANT: add ~/.local/bin to PATH so 'pmtiles' works now and later.
       - name: Install tippecanoe & pmtiles
         run: |
           sudo apt-get update
-          sudo apt-get install -y tippecanoe
+          sudo apt-get install -y tippecanoe python3-pip
           python3 -m pip install --user --upgrade pmtiles
+          export PATH="$HOME/.local/bin:$PATH"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          pmtiles --help
+          which pmtiles || true
+          ls -l "$HOME/.local/bin" || true
 
       # Build MBTiles with stable layer name "cameras"
       - name: Build MBTiles (layer name "cameras")
@@ -52,7 +53,8 @@ jobs:
       # Convert MBTiles -> PMTiles using the CLI
       - name: Convert to PMTiles
         run: |
-          pmtiles convert data/cameras.mbtiles cameras.pmtiles
+          pmtiles convert data/cameras.mbtiles cameras.pmtiles \
+            || "$HOME/.local/bin/pmtiles" convert data/cameras.mbtiles cameras.pmtiles
           ls -lh cameras.pmtiles
 
       # Publish the file to the gh-pages branch at /tiles/cameras.pmtiles
@@ -72,6 +74,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tiles/cameras.pmtiles
           git commit -m "Update cameras.pmtiles $(date -u +'%Y-%m-%dT%H:%M:%SZ')" || echo "No changes"
-          git push
-
           git push
