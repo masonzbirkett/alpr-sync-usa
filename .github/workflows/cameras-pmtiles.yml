@@ -1,9 +1,15 @@
 name: Build & Publish Cameras PMTiles
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch: {}          # enables the "Run workflow" button
   schedule:
-    - cron: "17 6 * * *"  # daily at 06:17 UTC
+    - cron: "17 6 * * *"        # nightly at 06:17 UTC
+  push:                          # also runs when these paths change on main
+    branches: [ main ]
+    paths:
+      - 'data/**'
+      - 'scripts/**'
+      - '.github/workflows/cameras-pmtiles.yml'
 
 permissions:
   contents: write
@@ -22,31 +28,31 @@ jobs:
         with:
           node-version: "20"
 
-      # Transform the sample/raw feed into a clean cameras.geojson
+      # 1) normalize to data/cameras.geojson (ensures each feature has 'dir')
       - name: Transform -> cameras.geojson (from sample/raw feed)
         run: |
           node scripts/transform_cameras.mjs
           ls -lh data/cameras.geojson
 
-      # Install tippecanoe and fetch the pmtiles CLI (Linux x86_64) directly
+      # 2) install tippecanoe and fetch the pmtiles CLI binary
       - name: Install tippecanoe & pmtiles CLI
         run: |
+          set -e
           sudo apt-get update
           sudo apt-get install -y tippecanoe
           ARCH="$(uname -m)"
           if [ "$ARCH" = "x86_64" ]; then
             URL="https://github.com/protomaps/PMTiles/releases/latest/download/pmtiles-linux-x86_64"
-         elif [ "$ARCH" = "aarch64" ]; then
+          elif [ "$ARCH" = "aarch64" ]; then
             URL="https://github.com/protomaps/PMTiles/releases/latest/download/pmtiles-linux-aarch64"
-         else
+          else
             echo "Unsupported architecture: $ARCH" && exit 1
-         fi
-         sudo curl -L -o /usr/local/bin/pmtiles "$URL"
-         sudo chmod +x /usr/local/bin/pmtiles
-         pmtiles --help
+          fi
+          sudo curl -L -o /usr/local/bin/pmtiles "$URL"
+          sudo chmod +x /usr/local/bin/pmtiles
+          pmtiles --help
 
-
-      # Build MBTiles with stable layer name "cameras"
+      # 3) build vector tiles (MBTiles) with a stable layer name "cameras"
       - name: Build MBTiles (layer name "cameras")
         run: |
           tippecanoe -o data/cameras.mbtiles \
@@ -57,15 +63,13 @@ jobs:
             data/cameras.geojson
           ls -lh data/cameras.mbtiles
 
-      # Convert MBTiles -> PMTiles using the downloaded CLI
+      # 4) convert MBTiles -> PMTiles
       - name: Convert to PMTiles
         run: |
           pmtiles convert data/cameras.mbtiles cameras.pmtiles
           ls -lh cameras.pmtiles
 
-
-
-      # Publish the file to the gh-pages branch at /tiles/cameras.pmtiles
+      # 5) publish PMTiles to the gh-pages branch at /tiles/cameras.pmtiles
       - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
@@ -75,6 +79,7 @@ jobs:
 
       - name: Publish to gh-pages/tiles/
         run: |
+          set -e
           mkdir -p site/tiles
           cp -f cameras.pmtiles site/tiles/cameras.pmtiles
           cd site
@@ -83,3 +88,4 @@ jobs:
           git add tiles/cameras.pmtiles
           git commit -m "Update cameras.pmtiles $(date -u +'%Y-%m-%dT%H:%M:%SZ')" || echo "No changes"
           git push
+
