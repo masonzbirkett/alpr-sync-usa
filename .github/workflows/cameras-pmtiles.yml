@@ -1,0 +1,68 @@
+name: Build & Publish Cameras PMTiles
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "17 6 * * *"   # daily at 06:17 UTC; change as you wish
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Transform -> cameras.geojson (from sample/raw feed)
+        run: |
+          node scripts/transform_cameras.mjs
+          ls -lh data/cameras.geojson
+
+      - name: Install tippecanoe & pmtiles
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tippecanoe python3-pip
+          python3 -m pip install --upgrade pip pmtiles
+
+      - name: Build MBTiles (layer name "cameras")
+        run: |
+          tippecanoe -o data/cameras.mbtiles \
+            -zg -l cameras \
+            --drop-densest-as-needed --coalesce-densest-as-needed \
+            --no-feature-limit --no-tile-size-limit \
+            -y dir -y id -y type -y last_seen \
+            data/cameras.geojson
+          ls -lh data/cameras.mbtiles
+
+      - name: Convert to PMTiles
+        run: |
+          python3 -m pmtiles convert data/cameras.mbtiles cameras.pmtiles
+          ls -lh cameras.pmtiles
+
+      # Publish to gh-pages branch under /tiles/
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 0
+
+      - name: Publish to gh-pages/tiles/
+        run: |
+          mkdir -p site/tiles
+          cp -f cameras.pmtiles site/tiles/cameras.pmtiles
+          cd site
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tiles/cameras.pmtiles
+          git commit -m "Update cameras.pmtiles $(date -u +'%Y-%m-%dT%H:%M:%SZ')" || echo "No changes"
+          git push
