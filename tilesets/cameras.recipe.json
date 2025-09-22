@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "layers": {
+    "cameras": {
+      "source": "mapbox://tileset-source/masonzbirkett/cameras_src",
+      "minzoom": 6,
+      "maxzoom": 15
+    }
+  }
+}
