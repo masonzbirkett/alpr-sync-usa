@@ -1,7 +1,16 @@
 name: Build & Publish Cameras Tileset
 
 on:
-  workflow_dispatch: {}   # manual run only for the first success
+  workflow_dispatch: {}
+  schedule:
+    - cron: "17 6 * * *"     # daily at 06:17 UTC
+  push:
+    branches: [ main ]
+    paths:
+      - "data/**"
+      - "scripts/**"
+      - "tilesets/**"
+      - ".github/workflows/cameras-tileset.yml"
 
 jobs:
   build:
