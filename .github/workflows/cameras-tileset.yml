@@ -1,30 +1,19 @@
 name: Build & Publish Cameras Tileset
 
 on:
-  workflow_dispatch: {}          # lets you run it manually
-  schedule:
-    - cron: "17 6 * * *"        # runs daily at 06:17 UTC
-  push:
-    branches: [ main ]
-    paths:
-      - "data/**"
-      - "scripts/**"
-      - "tilesets/**"
-      - ".github/workflows/cameras-tileset.yml"
+  workflow_dispatch: {}   # manual run only for the first success
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # 1) Produce data/cameras.geojson from your raw feed
+      # 1) Produce data/cameras.geojson
       - name: Transform -> cameras.geojson
         run: |
           node scripts/transform_cameras.mjs
@@ -34,21 +23,25 @@ jobs:
       - name: Install Mapbox tilesets CLI
         run: python3 -m pip install --upgrade pip mapbox-tilesets
 
-      # 3) Upload/replace the tileset source from GeoJSON
+      # 3) Upload/replace the tileset source
       - name: Upload tileset source
-        env: { MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }} }
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
           tilesets upload-source masonzbirkett cameras_src data/cameras.geojson --replace
 
-      # 4) Create the tileset (ENABLE THIS TRUE FOR THE FIRST RUN ONLY)
+      # 4) Create the tileset (ENABLE for first run only)
       - name: Create tileset (one-time)
         if: ${{ true }}
-        env: { MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }} }
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
           tilesets create masonzbirkett.cameras --recipe tilesets/cameras.recipe.json --name "Flock Cameras"
 
-      # 5) Publish (build) the tileset
+      # 5) Publish the tileset (build it)
       - name: Publish tileset
-        env: { MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }} }
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
           tilesets publish masonzbirkett.cameras
+
