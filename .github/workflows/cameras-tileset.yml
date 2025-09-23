@@ -13,35 +13,72 @@ jobs:
         with:
           node-version: "20"
 
-                  # 0) Fetch the latest raw dataset (URL secret optional; else run your script)
-      - name: Fetch latest Flock cameras
-        env:
-          RAW_DATA_URL: ${{ secrets.RAW_DATA_URL }}  # optional: set this secret to a full JSON/GeoJSON URL if you have one
+                        # 0) Fetch: your script writes state files to public/usa/*.json
+      - name: Fetch latest Flock cameras (per-state files)
         run: |
           set -e
-          mkdir -p data
-          if [ -n "$RAW_DATA_URL" ]; then
-            echo "Downloading from RAW_DATA_URL..."
-            curl -fsSL "$RAW_DATA_URL" -o data/raw_fetch.bin
-          else
-            echo "Running fetch-alprs.js..."
-            node fetch-alprs.js --out data/raw_fetch.bin || node fetch-alprs.js > data/raw_fetch.bin
-          fi
-          echo "Fetched file:" && ls -lh data/raw_fetch.bin || true
-          echo "MIME:" && file -b --mime-type data/raw_fetch.bin || true
-          # If gzipped, decompress; else copy as-is
-          if file -b --mime-type data/raw_fetch.bin | grep -qi gzip; then
-            echo "Decompressing gzip payload..."
-            gunzip -c data/raw_fetch.bin > data/raw_deflock.geojson
-          else
-            cp -f data/raw_fetch.bin data/raw_deflock.geojson
-          fi
-          echo "RAW preview (first 200 chars):"
-          head -c 200 data/raw_deflock.geojson | sed 's/[[:cntrl:]]/ /g' || true
-          echo
-          echo "RAW size:" && wc -c data/raw_deflock.geojson || true
+          mkdir -p public/usa data
+          node fetch-alprs.js
+          echo "Index written (from your script):"
+          ls -lh public/index.json || true
+          echo "Sample state files:"
+          ls -lh public/usa | head -n 10 || true
 
-      # 0.1) Guard: RAW must parse and have many records (JSON/FeatureCollection/NDJSON)
+      # 0.1) Combine all state files -> ONE raw GeoJSON used by the rest of the pipeline
+      - name: Combine state files -> data/raw_deflock.geojson
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const dir = 'public/usa';
+          let features = [];
+          if (!fs.existsSync(dir)) {
+            console.error('Directory not found:', dir);
+            process.exit(1);
+          }
+          for (const fname of fs.readdirSync(dir)) {
+            if (!fname.endsWith('.json')) continue;
+            const fpath = path.join(dir, fname);
+            const text = fs.readFileSync(fpath, 'utf8').trim();
+            if (!text) continue;
+            let j;
+            try { j = JSON.parse(text); } catch { continue; }
+
+            // Accept FeatureCollection, array of features/records, or other common shapes
+            let arr = Array.isArray(j) ? j : (j.features || j.records || j.data || j.items || []);
+            if (!Array.isArray(arr)) continue;
+
+            for (const item of arr) {
+              // Prefer proper GeoJSON Point
+              const g = item?.geometry;
+              if (g?.type === 'Point' && Array.isArray(g.coordinates) && g.coordinates.length >= 2) {
+                features.push({
+                  type: 'Feature',
+                  geometry: { type: 'Point', coordinates: g.coordinates.slice(0,2) },
+                  properties: item.properties || {}
+                });
+                continue;
+              }
+              // Otherwise try to build from properties with lat/lon-like keys
+              const p = (item && typeof item === 'object') ? (item.properties || item) : {};
+              const n = v => (Number.isFinite(Number(v)) ? Number(v) : null);
+              let lng = n(p.lng ?? p.lon ?? p.long ?? p.longitude ?? p.x);
+              let lat = n(p.lat ?? p.latitude ?? p.y);
+              if (lng !== null && lat !== null) {
+                features.push({
+                  type: 'Feature',
+                  geometry: { type: 'Point', coordinates: [lng, lat] },
+                  properties: p
+                });
+              }
+            }
+          }
+          fs.mkdirSync('data', { recursive: true });
+          fs.writeFileSync('data/raw_deflock.geojson', JSON.stringify({ type:'FeatureCollection', features }));
+          console.log('COMBINED raw features:', features.length);
+          NODE
+
+      # 0.2) Guard: RAW must parse and have many records
       - name: Check RAW count
         run: |
           node - <<'NODE'
@@ -54,11 +91,8 @@ jobs:
           else if (j && (j.features||j.records||j.data||j.items)) {
             const arr = j.features||j.records||j.data||j.items;
             if (Array.isArray(arr)) n=arr.length;
-          } else {
-            // NDJSON fallback
-            n = t.split(/\r?\n/).filter(Boolean).length;
           }
-          console.log('RAW records (best-effort):', n);
+          console.log('RAW records:', n);
           if (n < 10) throw new Error('Too few RAW records; aborting');
           NODE
 
