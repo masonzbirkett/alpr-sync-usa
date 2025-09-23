@@ -1,0 +1,7 @@
+# build-time raw inputs (created by the workflow)
+data/raw_deflock.geojson
+data/raw_fetch.bin
+
+# keep the tiny example checked in
+!data/raw_deflock.sample.geojson
+
