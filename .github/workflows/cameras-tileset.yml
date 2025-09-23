@@ -2,15 +2,7 @@ name: Build & Publish Cameras Tileset
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "17 6 * * *"     # daily at 06:17 UTC
-  push:
-    branches: [ main ]
-    paths:
-      - "data/**"
-      - "scripts/**"
-      - "tilesets/**"
-      - ".github/workflows/cameras-tileset.yml"
+  # you can add the schedule later after first success
 
 jobs:
   build:
@@ -22,35 +14,45 @@ jobs:
         with:
           node-version: "20"
 
-      # 1) Produce data/cameras.geojson
+      # 0) Fetch the latest Flock data into data/raw_deflock.geojson
+      - name: Fetch latest Flock cameras
+        run: |
+          set -e
+          mkdir -p data
+          # try with --out; if script prints to stdout, capture it
+          node fetch-alprs.js --out data/raw_deflock.geojson || node fetch-alprs.js > data/raw_deflock.geojson
+          ls -lh data/raw_deflock.geojson
+
+      # 1) Transform -> data/cameras.geojson
       - name: Transform -> cameras.geojson
         run: |
           node scripts/transform_cameras.mjs
           ls -lh data/cameras.geojson
+          node -e "const g=JSON.parse(require('fs').readFileSync('data/cameras.geojson','utf8'));console.log('camera features:',(g.features||[]).length)"
 
       # 2) Install Mapbox tilesets CLI
       - name: Install Mapbox tilesets CLI
         run: python3 -m pip install --upgrade pip mapbox-tilesets
 
-      # 3) Upload/replace the tileset source
+      # 3) Upload/replace the tileset source from GeoJSON
       - name: Upload tileset source
         env:
           MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
           tilesets upload-source masonzbirkett cameras_src data/cameras.geojson --replace
 
-      # 4) Create the tileset (ENABLE for first run only)
+      # 4) Create the tileset (FIRST RUN ONLY)
       - name: Create tileset (one-time)
-        if: ${{ true }}
         env:
           MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
           tilesets create masonzbirkett.cameras --recipe tilesets/cameras.recipe.json --name "Flock Cameras"
 
-      # 5) Publish the tileset (build it)
+      # 5) Publish (build) the tileset
       - name: Publish tileset
         env:
           MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
           tilesets publish masonzbirkett.cameras
+
 
