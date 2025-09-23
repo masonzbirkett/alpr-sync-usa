@@ -29,6 +29,15 @@ jobs:
           node scripts/transform_cameras.mjs
           ls -lh data/cameras.geojson
           node -e "const g=JSON.parse(require('fs').readFileSync('data/cameras.geojson','utf8'));console.log('camera features:',(g.features||[]).length)"
+      - name: Show transformed counts & sample
+        run: |
+          node -e "const fs=require('fs');const g=JSON.parse(fs.readFileSync('data/cameras.geojson','utf8'));const f=g.features||[];console.log('TRANSFORMED features:',f.length);console.log('FIRST feature keys:',Object.keys((f[0]||{}).properties||{}));console.log('FIRST coords:',(f[0]||{}).geometry?.coordinates);"
+
+      - name: Upload cameras.geojson as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cameras-geojson
+          path: data/cameras.geojson
 
       # 2) Install Mapbox tilesets CLI
       - name: Install Mapbox tilesets CLI
