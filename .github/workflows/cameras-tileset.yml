@@ -13,10 +13,10 @@ jobs:
         with:
           node-version: "20"
 
-            # 0) Fetch the latest raw dataset (prefer URL secret; fallback to script)
+                  # 0) Fetch the latest raw dataset (URL secret optional; else run your script)
       - name: Fetch latest Flock cameras
         env:
-          RAW_DATA_URL: ${{ secrets.RAW_DATA_URL }}  # <- set this in repo secrets if you have a working endpoint
+          RAW_DATA_URL: ${{ secrets.RAW_DATA_URL }}  # optional: set this secret to a full JSON/GeoJSON URL if you have one
         run: |
           set -e
           mkdir -p data
@@ -27,32 +27,27 @@ jobs:
             echo "Running fetch-alprs.js..."
             node fetch-alprs.js --out data/raw_fetch.bin || node fetch-alprs.js > data/raw_fetch.bin
           fi
-          echo "Fetched file:"
-          ls -lh data/raw_fetch.bin || true
-          echo "MIME:"
-          file -b --mime-type data/raw_fetch.bin || true
-
-          # If gzipped, decompress; otherwise copy
+          echo "Fetched file:" && ls -lh data/raw_fetch.bin || true
+          echo "MIME:" && file -b --mime-type data/raw_fetch.bin || true
+          # If gzipped, decompress; else copy as-is
           if file -b --mime-type data/raw_fetch.bin | grep -qi gzip; then
             echo "Decompressing gzip payload..."
             gunzip -c data/raw_fetch.bin > data/raw_deflock.geojson
           else
             cp -f data/raw_fetch.bin data/raw_deflock.geojson
           fi
-
-          echo "RAW preview (first 400 chars; control chars stripped):"
-          head -c 400 data/raw_deflock.geojson | sed 's/[[:cntrl:]]/ /g' || true
+          echo "RAW preview (first 200 chars):"
+          head -c 200 data/raw_deflock.geojson | sed 's/[[:cntrl:]]/ /g' || true
           echo
-          echo "RAW size:"
-          wc -c data/raw_deflock.geojson || true
+          echo "RAW size:" && wc -c data/raw_deflock.geojson || true
 
-      # 0.1) Guard: RAW must parse and have many records (JSON, FeatureCollection, or NDJSON)
+      # 0.1) Guard: RAW must parse and have many records (JSON/FeatureCollection/NDJSON)
       - name: Check RAW count
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const t=fs.readFileSync('data/raw_deflock.geojson','utf8').trim();
-          if(!t.length){ throw new Error('raw_deflock.geojson is empty'); }
+          if(!t.length) throw new Error('raw_deflock.geojson is empty');
           let j=null, n=0;
           try { j=JSON.parse(t); } catch {}
           if (Array.isArray(j)) n=j.length;
@@ -64,18 +59,25 @@ jobs:
             n = t.split(/\r?\n/).filter(Boolean).length;
           }
           console.log('RAW records (best-effort):', n);
-          if (n < 10) { throw new Error('Too few RAW records; aborting'); }
+          if (n < 10) throw new Error('Too few RAW records; aborting');
           NODE
 
-          
       # 1) Transform -> data/cameras.geojson
       - name: Transform -> cameras.geojson
         run: |
           set -e
           node scripts/transform_cameras.mjs
           ls -lh data/cameras.geojson
-          # Guard: transformed must be valid, non-empty, and have many features
-          node -e "const fs=require('fs');const g=JSON.parse(fs.readFileSync('data/cameras.geojson','utf8'));const f=g.features||[]; console.log('TRANSFORMED features:',f.length); if(!f.length) throw new Error('Transform produced 0 features'); if(f.length<10) throw new Error('Too few transformed features; aborting'); console.log('FIRST coords:',(f[0]||{}).geometry?.coordinates)"
+          node -e "const fs=require('fs');const g=JSON.parse(fs.readFileSync('data/cameras.geojson','utf8'));const f=g.features||[];console.log('TRANSFORMED features:',f.length);console.log('FIRST coords:',(f[0]||{}).geometry?.coordinates); if(f.length<10) throw new Error('Too few transformed features; aborting')"
+
+      # (optional) keep files to inspect from the run page
+      - name: Upload raw & transformed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cameras-debug
+          path: |
+            data/raw_deflock.geojson
+            data/cameras.geojson
 
       # 2) Install Mapbox tilesets CLI
       - name: Install Mapbox tilesets CLI
