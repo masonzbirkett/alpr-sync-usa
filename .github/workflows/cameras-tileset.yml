@@ -1,8 +1,7 @@
 name: Build & Publish Cameras Tileset
 
 on:
-  workflow_dispatch: {}
-  # you can add the schedule later after first success
+  workflow_dispatch: {}     # run manually for the first success
 
 jobs:
   build:
@@ -14,40 +13,37 @@ jobs:
         with:
           node-version: "20"
 
-      # 0) Fetch the latest Flock data into data/raw_deflock.geojson
+      # 0) Fetch the latest raw dataset into data/raw_deflock.geojson
       - name: Fetch latest Flock cameras
         run: |
           set -e
           mkdir -p data
-          # try with --out; if script prints to stdout, capture it
+          # If your fetch script supports --out, use it; otherwise pipe stdout.
           node fetch-alprs.js --out data/raw_deflock.geojson || node fetch-alprs.js > data/raw_deflock.geojson
+          echo "RAW file:"
           ls -lh data/raw_deflock.geojson
+          # Guard: raw must not be empty and should have many records
+          node -e "const fs=require('fs');const t=fs.readFileSync('data/raw_deflock.geojson','utf8'); if(!t.trim().length){throw new Error('raw_deflock.geojson is empty')} let j; try{j=JSON.parse(t)}catch{j=null} const arr=Array.isArray(j)?j:(j&&(j.features||j.records||j.data||j.items)||[]); const n=Array.isArray(arr)?arr.length:0; console.log('RAW records:',n); if(n<10) throw new Error('Too few RAW records; aborting')"
 
       # 1) Transform -> data/cameras.geojson
       - name: Transform -> cameras.geojson
         run: |
+          set -e
           node scripts/transform_cameras.mjs
           ls -lh data/cameras.geojson
-          node -e "const g=JSON.parse(require('fs').readFileSync('data/cameras.geojson','utf8'));console.log('camera features:',(g.features||[]).length)"
-      - name: Show transformed counts & sample
-        run: |
-          node -e "const fs=require('fs');const g=JSON.parse(fs.readFileSync('data/cameras.geojson','utf8'));const f=g.features||[];console.log('TRANSFORMED features:',f.length);console.log('FIRST feature keys:',Object.keys((f[0]||{}).properties||{}));console.log('FIRST coords:',(f[0]||{}).geometry?.coordinates);"
-
-      - name: Upload cameras.geojson as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cameras-geojson
-          path: data/cameras.geojson
+          # Guard: transformed must be valid, non-empty, and have many features
+          node -e "const fs=require('fs');const g=JSON.parse(fs.readFileSync('data/cameras.geojson','utf8'));const f=g.features||[]; console.log('TRANSFORMED features:',f.length); if(!f.length) throw new Error('Transform produced 0 features'); if(f.length<10) throw new Error('Too few transformed features; aborting'); console.log('FIRST coords:',(f[0]||{}).geometry?.coordinates)"
 
       # 2) Install Mapbox tilesets CLI
       - name: Install Mapbox tilesets CLI
         run: python3 -m pip install --upgrade pip mapbox-tilesets
 
-      # 3) Upload/replace the tileset source from GeoJSON
+      # 3) Upload/replace the tileset source
       - name: Upload tileset source
         env:
           MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
+          test -s data/cameras.geojson || (echo "cameras.geojson is empty" && exit 1)
           tilesets upload-source masonzbirkett cameras_src data/cameras.geojson --replace
 
       # 4) Create the tileset (FIRST RUN ONLY)
@@ -63,5 +59,6 @@ jobs:
           MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_SECRET_TOKEN }}
         run: |
           tilesets publish masonzbirkett.cameras
+
 
 
