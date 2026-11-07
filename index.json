@@ -1,0 +1,311 @@
+{
+  "generated_at": "2026-11-07T16:21:22.131Z",
+  "states": [
+    {
+      "state": "Alabama",
+      "file": "usa/Alabama.json",
+      "count": 3042,
+      "ok": true
+    },
+    {
+      "state": "Alaska",
+      "file": "usa/Alaska.json",
+      "count": 31,
+      "ok": true
+    },
+    {
+      "state": "Arizona",
+      "file": "usa/Arizona.json",
+      "count": 2674,
+      "ok": true
+    },
+    {
+      "state": "Arkansas",
+      "file": "usa/Arkansas.json",
+      "count": 1103,
+      "ok": true
+    },
+    {
+      "state": "California",
+      "file": "usa/California.json",
+      "count": 21642,
+      "ok": true
+    },
+    {
+      "state": "Colorado",
+      "file": "usa/Colorado.json",
+      "count": 2770,
+      "ok": true
+    },
+    {
+      "state": "Connecticut",
+      "file": "usa/Connecticut.json",
+      "count": 1050,
+      "ok": true
+    },
+    {
+      "state": "Delaware",
+      "file": "usa/Delaware.json",
+      "count": 524,
+      "ok": true
+    },
+    {
+      "state": "District of Columbia",
+      "file": "usa/District_of_Columbia.json",
+      "count": 113,
+      "ok": true
+    },
+    {
+      "state": "Florida",
+      "file": "usa/Florida.json",
+      "count": 9562,
+      "ok": true
+    },
+    {
+      "state": "Georgia",
+      "file": "usa/Georgia.json",
+      "count": 10353,
+      "ok": true
+    },
+    {
+      "state": "Hawaii",
+      "file": "usa/Hawaii.json",
+      "count": 103,
+      "ok": true
+    },
+    {
+      "state": "Idaho",
+      "file": "usa/Idaho.json",
+      "count": 486,
+      "ok": true
+    },
+    {
+      "state": "Illinois",
+      "file": "usa/Illinois.json",
+      "count": 7639,
+      "ok": true
+    },
+    {
+      "state": "Indiana",
+      "file": "usa/Indiana.json",
+      "count": 3845,
+      "ok": true
+    },
+    {
+      "state": "Iowa",
+      "file": "usa/Iowa.json",
+      "count": 879,
+      "ok": true
+    },
+    {
+      "state": "Kansas",
+      "file": "usa/Kansas.json",
+      "count": 2098,
+      "ok": true
+    },
+    {
+      "state": "Kentucky",
+      "file": "usa/Kentucky.json",
+      "count": 1880,
+      "ok": true
+    },
+    {
+      "state": "Louisiana",
+      "file": "usa/Louisiana.json",
+      "count": 2339,
+      "ok": true
+    },
+    {
+      "state": "Maine",
+      "file": "usa/Maine.json",
+      "count": 104,
+      "ok": true
+    },
+    {
+      "state": "Maryland",
+      "file": "usa/Maryland.json",
+      "count": 1021,
+      "ok": true
+    },
+    {
+      "state": "Massachusetts",
+      "file": "usa/Massachusetts.json",
+      "count": 1212,
+      "ok": true
+    },
+    {
+      "state": "Michigan",
+      "file": "usa/Michigan.json",
+      "count": 3672,
+      "ok": true
+    },
+    {
+      "state": "Minnesota",
+      "file": "usa/Minnesota.json",
+      "count": 1706,
+      "ok": true
+    },
+    {
+      "state": "Mississippi",
+      "file": "usa/Mississippi.json",
+      "count": 1177,
+      "ok": true
+    },
+    {
+      "state": "Missouri",
+      "file": "usa/Missouri.json",
+      "count": 3497,
+      "ok": true
+    },
+    {
+      "state": "Montana",
+      "file": "usa/Montana.json",
+      "count": 89,
+      "ok": true
+    },
+    {
+      "state": "Nebraska",
+      "file": "usa/Nebraska.json",
+      "count": 655,
+      "ok": true
+    },
+    {
+      "state": "Nevada",
+      "file": "usa/Nevada.json",
+      "count": 998,
+      "ok": true
+    },
+    {
+      "state": "New Hampshire",
+      "file": "usa/New_Hampshire.json",
+      "count": 80,
+      "ok": true
+    },
+    {
+      "state": "New Jersey",
+      "file": "usa/New_Jersey.json",
+      "count": 2469,
+      "ok": true
+    },
+    {
+      "state": "New Mexico",
+      "file": "usa/New_Mexico.json",
+      "count": 1040,
+      "ok": true
+    },
+    {
+      "state": "New York",
+      "file": "usa/New_York.json",
+      "count": 4771,
+      "ok": true
+    },
+    {
+      "state": "North Carolina",
+      "file": "usa/North_Carolina.json",
+      "count": 3972,
+      "ok": true
+    },
+    {
+      "state": "North Dakota",
+      "file": "usa/North_Dakota.json",
+      "count": 168,
+      "ok": true
+    },
+    {
+      "state": "Ohio",
+      "file": "usa/Ohio.json",
+      "count": 6986,
+      "ok": true
+    },
+    {
+      "state": "Oklahoma",
+      "file": "usa/Oklahoma.json",
+      "count": 1547,
+      "ok": true
+    },
+    {
+      "state": "Oregon",
+      "file": "usa/Oregon.json",
+      "count": 549,
+      "ok": true
+    },
+    {
+      "state": "Pennsylvania",
+      "file": "usa/Pennsylvania.json",
+      "count": 3979,
+      "ok": true
+    },
+    {
+      "state": "Rhode Island",
+      "file": "usa/Rhode_Island.json",
+      "count": 319,
+      "ok": true
+    },
+    {
+      "state": "South Carolina",
+      "file": "usa/South_Carolina.json",
+      "count": 2169,
+      "ok": true
+    },
+    {
+      "state": "South Dakota",
+      "file": "usa/South_Dakota.json",
+      "count": 285,
+      "ok": true
+    },
+    {
+      "state": "Tennessee",
+      "file": "usa/Tennessee.json",
+      "count": 3706,
+      "ok": true
+    },
+    {
+      "state": "Texas",
+      "file": "usa/Texas.json",
+      "count": 17523,
+      "ok": true
+    },
+    {
+      "state": "Utah",
+      "file": "usa/Utah.json",
+      "count": 1074,
+      "ok": true
+    },
+    {
+      "state": "Vermont",
+      "file": "usa/Vermont.json",
+      "count": 31,
+      "ok": true
+    },
+    {
+      "state": "Virginia",
+      "file": "usa/Virginia.json",
+      "count": 3404,
+      "ok": true
+    },
+    {
+      "state": "Washington",
+      "file": "usa/Washington.json",
+      "count": 2600,
+      "ok": true
+    },
+    {
+      "state": "West Virginia",
+      "file": "usa/West_Virginia.json",
+      "count": 241,
+      "ok": true
+    },
+    {
+      "state": "Wisconsin",
+      "file": "usa/Wisconsin.json",
+      "count": 2094,
+      "ok": true
+    },
+    {
+      "state": "Wyoming",
+      "file": "usa/Wyoming.json",
+      "count": 73,
+      "ok": true
+    }
+  ]
+}
